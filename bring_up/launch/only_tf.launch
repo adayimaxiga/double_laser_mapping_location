@@ -1,0 +1,8 @@
+
+<launch>
+  <param name="/use_sim_time" value="true" />
+
+  <node pkg="tf" type="static_transform_publisher" name="laser_baselink" args="0.505 0.259 0 0 0 0.382683 0.92388 base_link laser 100" />
+  <node pkg="tf" type="static_transform_publisher" name="laser1_baselink" args="-0.505 -0.259 0 0 0 -0.92388 0.382683 base_link laser_1 100" />
+
+</launch>
