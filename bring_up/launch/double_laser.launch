@@ -8,11 +8,7 @@
       output="screen">
   </node>
 
-  <node pkg="tf" type="static_transform_publisher" name="laser_baselink" args="0.505 0.259 0 0 0 0.382683 0.92388 base_link laser 100" />
-  <node pkg="tf" type="static_transform_publisher" name="laser1_baselink" args="-0.505 -0.259 0 0 0 -0.92388 0.382683 base_link laser_1 100" />
-
-
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
-      type="cartographer_occupancy_grid_node" args="-resolution 0.05" />
+      type="cartographer_occupancy_grid_node" args="-resolution 0.01" />
 </launch>
 

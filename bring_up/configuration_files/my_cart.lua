@@ -8,13 +8,13 @@ options = {
   tracking_frame = "base_link",
   published_frame = "base_link",
   odom_frame = "odom",
-  provide_odom_frame = false,
+  provide_odom_frame = true,
   use_odometry = true,
   use_nav_sat = false,
   use_landmarks = false,
   publish_frame_projected_to_2d = false,
   num_laser_scans = 2,
-  num_subdivisions_per_laser_scan = 10,
+  num_subdivisions_per_laser_scan = 1,
   num_multi_echo_laser_scans = 0,
   num_point_clouds = 0,
   num_multi_echo_laser_scans = 0,
@@ -39,13 +39,13 @@ TRAJECTORY_BUILDER_2D.motion_filter.max_time_seconds = 60
 TRAJECTORY_BUILDER_2D.motion_filter.max_distance_meters = 0.2
 TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(3.)
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 70
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 300
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 1000
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data =
 options.num_laser_scans * options.num_subdivisions_per_laser_scan
 
-TRAJECTORY_BUILDER_2D.submaps.num_range_data = 120
+TRAJECTORY_BUILDER_2D.submaps.num_range_data = 40
 
-POSE_GRAPH.constraint_builder.min_score = 0.82
-POSE_GRAPH.constraint_builder.sampling_ratio = 1.
+POSE_GRAPH.constraint_builder.min_score = 0.95
+POSE_GRAPH.constraint_builder.sampling_ratio = 0.3
 
 return options
