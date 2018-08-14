@@ -62,7 +62,7 @@
     <plugin name="turtlebot3_waffle_controller" filename="libgazebo_ros_diff_drive.so">
       <commandTopic>cmd_vel</commandTopic>
       <odometryTopic>odom</odometryTopic>
-      <odometryFrame>odom_2</odometryFrame>
+      <odometryFrame>odom</odometryFrame>
       <odometrySource>world</odometrySource>
       <publishOdomTF>true</publishOdomTF>
       <robotBaseFrame>base_link</robotBaseFrame>

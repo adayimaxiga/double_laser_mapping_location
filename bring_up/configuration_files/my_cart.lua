@@ -37,15 +37,15 @@ TRAJECTORY_BUILDER_2D.missing_data_ray_length = 1.0
 TRAJECTORY_BUILDER_2D.use_imu_data = false
 TRAJECTORY_BUILDER_2D.motion_filter.max_time_seconds = 60
 TRAJECTORY_BUILDER_2D.motion_filter.max_distance_meters = 0.2
-TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(3.)
+TRAJECTORY_BUILDER_2D.motion_filter.max_angle_radians = math.rad(1.)
 TRAJECTORY_BUILDER_2D.ceres_scan_matcher.translation_weight = 70
-TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 1000
+TRAJECTORY_BUILDER_2D.ceres_scan_matcher.rotation_weight = 1
 TRAJECTORY_BUILDER_2D.num_accumulated_range_data =
 options.num_laser_scans * options.num_subdivisions_per_laser_scan
 
 TRAJECTORY_BUILDER_2D.submaps.num_range_data = 40
 
-POSE_GRAPH.constraint_builder.min_score = 0.95
-POSE_GRAPH.constraint_builder.sampling_ratio = 0.3
+POSE_GRAPH.constraint_builder.min_score = 0.85
+POSE_GRAPH.constraint_builder.sampling_ratio = 1.
 
 return options

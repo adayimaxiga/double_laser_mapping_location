@@ -9,6 +9,6 @@
   </node>
 
   <node name="cartographer_occupancy_grid_node" pkg="cartographer_ros"
-      type="cartographer_occupancy_grid_node" args="-resolution 0.01" />
+      type="cartographer_occupancy_grid_node" args="-resolution 0.03" />
 </launch>
 
