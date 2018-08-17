@@ -38,7 +38,7 @@ class CeresScanMatcherTest : public ::testing::Test {
       : probability_grid_(
             MapLimits(1., Eigen::Vector2d(10., 10.), CellLimits(20, 20))) {
     probability_grid_.SetProbability(
-        probability_grid_.limits().GetCellIndex(Eigen::Vector2f(-3.5f, 2.5f)),
+                    probability_grid_.limits().GetCellIndex(Eigen::Vector2f(-3.5f, 2.5f)),
         kMaxProbability);
 
     point_cloud_.emplace_back(-3.f, 2.f, 0.f);
@@ -50,7 +50,7 @@ class CeresScanMatcherTest : public ::testing::Test {
           rotation_weight = 1.5,
           ceres_solver_options = {
             use_nonmonotonic_steps = true,
-            max_num_iterations = 50,
+            max_num_iterations = 500,
             num_threads = 1,
           },
         })text");
