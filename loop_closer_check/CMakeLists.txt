@@ -8,9 +8,22 @@ project(loop_closer_check)
 ## if COMPONENTS list like find_package(catkin REQUIRED COMPONENTS xyz)
 ## is used, also find other catkin packages
 find_package(catkin REQUIRED COMPONENTS
-  roscpp
-  sensor_msgs
-  std_msgs
+    roscpp
+    sensor_msgs
+    std_msgs
+    tf2
+    tf2_geometry_msgs
+    tf2_msgs
+    tf2_ros
+    eigen_conversions
+    geometry_msgs
+    message_runtime
+    nav_msgs
+    pcl_conversions
+    roscpp
+    roslib
+    tf2_eigen
+
 )
 
 
