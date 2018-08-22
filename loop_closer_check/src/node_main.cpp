@@ -3,6 +3,7 @@
 //
 #include "../include/loop_closer_check/ceres_scan_matcher_2d.h"
 #include "../include/loop_closer_check/voxel_filter.h"
+#include "../include/loop_closer_check/fast_correlative_scan_matcher_2d.h"
 #include <memory>
 #include "cartographer/common/lua_parameter_dictionary.h"
 #include "cartographer/common/lua_parameter_dictionary_test_helpers.h"
@@ -48,6 +49,9 @@
 
 //思路 map中进行接收地图数据，激光直接接收并处理，
 //amcl_pose中做扫描匹配，确定是不是进行branch and bound
+
+
+
 
 
 namespace cartographer {
@@ -150,12 +154,37 @@ namespace {
         std::unique_ptr<CeresScanMatcher2D> ceres_scan_matcher_;
         cartographer::sensor::TimedPointCloudData laser_scan_point_data[2];
 
-
+        void FastCorrelativeScanMatcher(const cartographer::sensor::PointCloud&  point_cloud_match);
         int map_receive = 0;
     };
-//***********************convert tools****************************
+//***********************fast full map match****************************
+    proto::FastCorrelativeScanMatcherOptions2D
+    CreateFastCorrelativeScanMatcherTestOptions2D(
+            const int branch_and_bound_depth) {
+        auto parameter_dictionary =
+                common::MakeDictionary(R"text(
+      return {
+         linear_search_window = 3.,
+         angular_search_window = 1.,
+         branch_and_bound_depth = )text" +
+                                       std::to_string(branch_and_bound_depth) + "}");
+        return CreateFastCorrelativeScanMatcherOptions2D(parameter_dictionary.get());
+    }
 
+    void
+    LoopClosuerCheck::FastCorrelativeScanMatcher(const cartographer::sensor::PointCloud&  point_cloud_match)
+    {
+        const auto options = CreateFastCorrelativeScanMatcherTestOptions2D(6);
+        FastCorrelativeScanMatcher2D fast_correlative_scan_matcher(*probability_grid_,
+                                                                   options);
+        transform::Rigid2d pose_estimate;
+        constexpr float kMinScore = 0.5f;
+        float score;
+        fast_correlative_scan_matcher.MatchFullSubmap(
+                point_cloud_match, kMinScore, &score, &pose_estimate);
 
+        std::cout<<std::endl<<transform::ToProto(pose_estimate).DebugString()<<"score is : "<<score;
+    }
 
 
 //***********************convert tools****************************
@@ -235,10 +264,26 @@ namespace {
         origin_pose_y = msg.info.origin.position.y;
         std::cout<<"cell index :"<<probability_grid_->limits().GetCellIndex(Eigen::Vector2f(0.f, 0.f));
         //地图坐标自底部向上，自左向右。
-        for(int j=0;j<msg.info.width;j++) {
-            for (int i = 0; i < msg.info.height; i++) {
-                probability_grid_->SetProbability(Eigen::Array2i(j,i),
-                       (float)msg.data[j+i*msg.info.width]/100.f);
+        //for(int j=0;j<msg.info.height;j++)
+        //{
+        //    for(int i=0;i<msg.info.width;i++)
+        //    {
+        //        std::cout<<"x : "<<i<<"y :"<<j<<std::endl;
+                //std::cout<<probability_grid_->limits().GetCellIndex(
+                //        Eigen::Vector2f(i*msg.info.resolution + origin_pose_x ,j*msg.info.resolution + origin_pose_y))<<std::endl;
+
+        //               probability_grid_->SetProbability(
+        //                probability_grid_->limits().GetCellIndex(
+        //                        Eigen::Vector2f(i*msg.info.resolution + origin_pose_x ,j*msg.info.resolution + origin_pose_y)),
+        //                (float)msg.data[i+j*msg.info.width]/100.f);
+        //    }
+        //}
+
+
+        for(int j=0;j<msg.info.height;j++) {
+            for (int i = 0; i < msg.info.width; i++) {
+                probability_grid_->SetProbability(Eigen::Array2i(msg.info.height-j-1,i),
+                       (float)msg.data[i+j*msg.info.width]/100.f);
             }
         }
         //printMap();
@@ -313,7 +358,7 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
     {
         sensor_msgs::PointCloud cloud;
         cloud.header.stamp = ros::Time::now();
-        cloud.header.frame_id = "base_link";
+        cloud.header.frame_id = "map";
         cloud.points.resize(point_cloud_show.size());
         cloud.channels.resize(1);
         cloud.channels[0].name = "la";
@@ -350,7 +395,8 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
                 tracking_frame_, frame_id, requested_time, ros::Duration(1.0))));
         ::cartographer::transform::Rigid3d down_to_zero({0,0,-0.3},Eigen::Quaternion<double>::Identity());
 
-        sensor_to_tracking = sensor_to_tracking * down_to_zero;
+        //sensor_to_tracking = sensor_to_tracking * down_to_zero;
+
         //std::cout<<"tracking from base_link to"<<frame_id<<"is"<<sensor_to_tracking.DebugString();
         cartographer::sensor::TimedPointCloudData point_cloud_processed{
                 time, sensor_to_tracking.translation().cast<float>(),
@@ -437,6 +483,8 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
         std::cout<<"amcl pose:"<<cartographer::transform::ToProto(initial_ceres_pose).DebugString()
                             <<std::endl<<"match_pose"<<cartographer::transform::ToProto(*pose_observation).DebugString();
         std::cout<<summary.BriefReport();
+        //直接匹配全局地图。
+        FastCorrelativeScanMatcher(filtered_point_cloud);
     }
 
 
