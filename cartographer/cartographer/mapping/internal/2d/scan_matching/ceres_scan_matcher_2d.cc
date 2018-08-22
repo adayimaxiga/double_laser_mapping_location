@@ -88,7 +88,7 @@ void CeresScanMatcher2D::Match(const Eigen::Vector2d& target_translation,
       nullptr /* loss function */, ceres_pose_estimate);
 
   ceres::Solve(ceres_solver_options_, &problem, summary);
-
+  //std::cout<<summary->BriefReport();
   *pose_estimate = transform::Rigid2d(
       {ceres_pose_estimate[0], ceres_pose_estimate[1]}, ceres_pose_estimate[2]);
 }

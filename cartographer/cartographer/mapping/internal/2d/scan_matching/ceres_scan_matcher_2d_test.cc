@@ -43,7 +43,7 @@ class CeresScanMatcherTest : public ::testing::Test {
 
     point_cloud_.emplace_back(-3.f, 2.f, 0.f);
 
-    auto parameter_dictionary = common::MakeDictionary(R"text(
+    auto parameter_dictionary = cartographer::common::MakeDictionary(R"text(
         return {
           occupied_space_weight = 1.,
           translation_weight = 0.1,

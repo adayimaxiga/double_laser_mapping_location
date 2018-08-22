@@ -151,6 +151,7 @@ google_binary(loop_closure_node
         src/correlative_scan_matcher_2d.cc
         src/fast_correlative_scan_matcher_2d.cc
         src/real_time_correlative_scan_matcher_2d.cc
+        src/voxel_filter.cc
         )
 
 install(TARGETS loop_closure_node

@@ -75,13 +75,11 @@ TEST_F(RangeDataInserterTest2D, InsertPointCloud) {
 
   enum class State { UNKNOWN, MISS, HIT };
   State expected_states[5][5] = {
-      {State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::UNKNOWN,
-       State::UNKNOWN},
-      {State::UNKNOWN, State::HIT, State::MISS, State::MISS, State::MISS},
-      {State::UNKNOWN, State::UNKNOWN, State::HIT, State::MISS, State::MISS},
-      {State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::HIT, State::MISS},
-      {State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::UNKNOWN,
-       State::HIT}};
+      {State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::UNKNOWN},
+      {State::UNKNOWN, State::HIT   ,  State::MISS,    State::MISS,    State::MISS},
+      {State::UNKNOWN, State::UNKNOWN, State::HIT,     State::MISS,    State::MISS},
+      {State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::HIT,     State::MISS},
+      {State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::UNKNOWN, State::HIT}};
   for (int row = 0; row != 5; ++row) {
     for (int column = 0; column != 5; ++column) {
       Eigen::Array2i cell_index(row, column);
