@@ -152,8 +152,10 @@ namespace {
         std::unique_ptr<CeresScanMatcher2D> ceres_scan_matcher_;
         cartographer::sensor::TimedPointCloudData laser_scan_point_data[2];
 
-        geometry_msgs::Pose FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match);
+        geometry_msgs::Pose FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match,float &score_return);
         int map_receive = 0;
+        int laser_receive_1 = 0;
+        int laser_receive_2 = 0;
     };
 //***********************fast full map match****************************
     proto::FastCorrelativeScanMatcherOptions2D
@@ -170,7 +172,7 @@ namespace {
     }
 
     geometry_msgs::Pose
-    LoopClosuerCheck::FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match)
+    LoopClosuerCheck::FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match,float &score_return)
     {
         const auto options = CreateFastCorrelativeScanMatcherTestOptions2D(8);
         FastCorrelativeScanMatcher2D fast_correlative_scan_matcher(*probability_grid_,
@@ -186,7 +188,7 @@ namespace {
         tf2::convert(q, match_result.orientation);
         match_result.position.x =  pose_estimate.translation().x();
         match_result.position.y =  pose_estimate.translation().y();
-
+        score_return = score;
         std::cout<<std::endl<<"全局匹配位置为："<<transform::ToProto(pose_estimate).DebugString()<<"score is : "<<score;
         return match_result;
     }
@@ -440,6 +442,11 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
     {
         if(!map_receive)
             return;
+        if(!laser_receive_1)
+            return;
+        if(!laser_receive_2)
+            return;
+
         std::unique_ptr<cartographer::sensor::OdometryData> odometry_data = ToOdometryData(msg);
 
         amcl_data = odometry_data->pose;
@@ -507,15 +514,18 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
         std::cout<<std::endl;
         if(summary.final_cost>0.35f)
         {
+            float score=0.f;
             std::cout<<"定位失效，开始全局检测";
             geometry_msgs::PoseStamped poseStamped;
             //此时认定定位失效，全局检测、
             //直接匹配全局地图。
             geometry_msgs::Pose pose_mm =
-            FastCorrelativeScanMatcher(initial_ceres_pose,filtered_point_cloud);
+            FastCorrelativeScanMatcher(initial_ceres_pose,filtered_point_cloud,score);
             poseStamped.pose = pose_mm;
             poseStamped.header = msg ->header;
-            pose_pub_.publish(poseStamped);
+
+            if((score >0.5f)&&(score<1.1f))
+                pose_pub_.publish(poseStamped);
         }
 
     }
@@ -524,6 +534,7 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
     void
     LoopClosuerCheck::LaserScanReceived_1(const sensor_msgs::LaserScanConstPtr& msg)
     {
+        laser_receive_1 =1;
         ::cartographer::sensor::PointCloudWithIntensities point_cloud;
         ::cartographer::common::Time time;
         std::tie(point_cloud, time) = LaserScanToPointCloudWithIntensities(*msg);
@@ -532,6 +543,7 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
     void
     LoopClosuerCheck::LaserScanReceived_2(const sensor_msgs::LaserScanConstPtr& msg)
     {
+        laser_receive_2=1;
         ::cartographer::sensor::PointCloudWithIntensities point_cloud;
         ::cartographer::common::Time time;
         std::tie(point_cloud, time) = LaserScanToPointCloudWithIntensities(*msg);
