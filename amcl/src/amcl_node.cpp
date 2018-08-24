@@ -165,6 +165,7 @@ class AmclNode
 
     void laserReceived_1(const sensor_msgs::LaserScanConstPtr& laser_scan_1);
     void laserReceived_2(const sensor_msgs::LaserScanConstPtr& laser_scan_2);
+    void scanMatchResultReceived(const geometry_msgs::PoseStampedConstPtr& msg);
 
     void initialPoseReceived(const geometry_msgs::PoseWithCovarianceStampedConstPtr& msg);
     void handleInitialPoseMessage(const geometry_msgs::PoseWithCovarianceStamped& msg);
@@ -258,6 +259,8 @@ class AmclNode
     ros::ServiceServer set_map_srv_;
     ros::Subscriber initial_pose_sub_old_;
     ros::Subscriber map_sub_;
+    //聆听正确的位置！！！！
+    ros::Subscriber scan_match_result_sub_;
 
     amcl_hyp_t* initial_pose_hyp_;
     bool first_map_received_;
@@ -476,7 +479,7 @@ AmclNode::AmclNode() :
                                                       this, _1));
 
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
-
+  scan_match_result_sub_ = nh_.subscribe("b_b_pose", 2, &AmclNode::scanMatchResultReceived, this);
   if(use_map_topic_) {
     map_sub_ = nh_.subscribe("map", 1, &AmclNode::mapReceived, this);
     ROS_INFO("Subscribed to map topic.");
@@ -494,7 +497,19 @@ AmclNode::AmclNode() :
   check_laser_timer_ = nh_.createTimer(laser_check_interval_, 
                                        boost::bind(&AmclNode::checkLaserReceived, this, _1));
 }
+void AmclNode::scanMatchResultReceived(const geometry_msgs::PoseStampedConstPtr& msg)
+{
+  geometry_msgs::PoseWithCovarianceStamped pose_with_covar;
+  pose_with_covar.header = msg ->header;
+  pose_with_covar.pose.pose = msg ->pose;
 
+  pose_with_covar.pose.covariance[6*0+0] = 0.5 * 0.5;
+  pose_with_covar.pose.covariance[6*1+1] = 0.5 * 0.5;
+  pose_with_covar.pose.covariance[6*5+5] = (M_PI/12.0) * (M_PI/12.0);
+  handleInitialPoseMessage(pose_with_covar);
+
+}
+//重新配置
 void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
 {
   boost::recursive_mutex::scoped_lock cfl(configuration_mutex_);
@@ -666,7 +681,7 @@ void AmclNode::reconfigureCB(AMCLConfig &config, uint32_t level)
   initial_pose_sub_ = nh_.subscribe("initialpose", 2, &AmclNode::initialPoseReceived, this);
 }
 
-
+//Nouse
 void AmclNode::runFromBag(const std::string &in_bag_fn)
 {
   rosbag::Bag bag;
@@ -1299,6 +1314,7 @@ AmclNode::laserReceived_1(const sensor_msgs::LaserScanConstPtr& laser_scan_1)
   if( map_ == NULL ) {
     return;
   }
+  //配置锁
   boost::recursive_mutex::scoped_lock lr(configuration_mutex_);
   int laser_index_1 = -1;
 

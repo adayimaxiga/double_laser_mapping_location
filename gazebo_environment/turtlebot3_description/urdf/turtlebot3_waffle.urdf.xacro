@@ -8,7 +8,7 @@
   <joint name="base_joint" type="fixed">
     <parent link="base_footprint"/>
     <child link="base_link" />
-    <origin xyz="0 0 0.010" rpy="0 0 0"/>
+    <origin xyz="0.5 2 0.010" rpy="0 0 0"/>
   </joint>
 
   <link name="base_link">

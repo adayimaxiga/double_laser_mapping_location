@@ -33,6 +33,7 @@
 #include "sensor_msgs/LaserScan.h"
 #include "sensor_msgs/PointCloud.h"
 #include "geometry_msgs/Pose.h"
+#include "geometry_msgs/PoseStamped.h"
 #include "geometry_msgs/PoseWithCovarianceStamped.h"
 #include "geometry_msgs/Transform.h"
 #include "geometry_msgs/TransformStamped.h"
@@ -68,6 +69,7 @@ namespace {
             laser1_sub_ = nh_.subscribe(scan_topic_1, 1, &LoopClosuerCheck::LaserScanReceived_1,this);
             laser2_sub_ = nh_.subscribe(scan_topic_2, 1, &LoopClosuerCheck::LaserScanReceived_2,this);
             cloud_pub_ = nh_.advertise<sensor_msgs::PointCloud>("cloud", 5);
+            pose_pub_ = nh_.advertise<geometry_msgs::PoseStamped>("b_b_pose", 1, true);
             tfb_.reset(new tf2_ros::TransformBroadcaster());
             tf_.reset(new tf2_ros::Buffer());
             tfl_.reset(new tf2_ros::TransformListener(*tf_));
@@ -140,7 +142,7 @@ namespace {
         ros::Subscriber map_sub_,amcl_pose_sub_;
         ros::Subscriber laser1_sub_;
         ros::Subscriber laser2_sub_;
-        ros::Publisher cloud_pub_;
+        ros::Publisher cloud_pub_,pose_pub_;
         nav_msgs::OccupancyGrid map_save;
         float origin_pose_x;
         float origin_pose_y;
@@ -150,7 +152,7 @@ namespace {
         std::unique_ptr<CeresScanMatcher2D> ceres_scan_matcher_;
         cartographer::sensor::TimedPointCloudData laser_scan_point_data[2];
 
-        void FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match);
+        geometry_msgs::Pose FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match);
         int map_receive = 0;
     };
 //***********************fast full map match****************************
@@ -167,7 +169,7 @@ namespace {
         return CreateFastCorrelativeScanMatcherOptions2D(parameter_dictionary.get());
     }
 
-    void
+    geometry_msgs::Pose
     LoopClosuerCheck::FastCorrelativeScanMatcher(const cartographer::transform::Rigid2d& initial_pose_estimate,const cartographer::sensor::PointCloud&  point_cloud_match)
     {
         const auto options = CreateFastCorrelativeScanMatcherTestOptions2D(8);
@@ -178,8 +180,15 @@ namespace {
         float score;
         fast_correlative_scan_matcher.Match(initial_pose_estimate,
                 point_cloud_match, kMinScore, &score, &pose_estimate);
+        geometry_msgs::Pose match_result;
+        tf2::Quaternion q;
+        q.setRPY(0, 0, pose_estimate.rotation().angle());
+        tf2::convert(q, match_result.orientation);
+        match_result.position.x =  pose_estimate.translation().x();
+        match_result.position.y =  pose_estimate.translation().y();
 
         std::cout<<std::endl<<"全局匹配位置为："<<transform::ToProto(pose_estimate).DebugString()<<"score is : "<<score;
+        return match_result;
     }
 
 
@@ -483,7 +492,7 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
 
         cartographer::transform::Rigid2d map_origin({origin_pose_x,origin_pose_y},0);
 
-        cartographer::transform::Rigid2d initial_ceres_pose ({pose_prediction.translation().x()+1,pose_prediction.translation().y()+2},pose_prediction.rotation());
+        cartographer::transform::Rigid2d initial_ceres_pose ({pose_prediction.translation().x(),pose_prediction.translation().y()},pose_prediction.rotation());
 
         auto pose_observation = common::make_unique<transform::Rigid2d>();
         ceres::Solver::Summary summary;
@@ -496,8 +505,19 @@ std::tuple<::cartographer::sensor::PointCloudWithIntensities, ::cartographer::co
                             <<std::endl<<"match_pose"<<cartographer::transform::ToProto(*pose_observation).DebugString();
         std::cout<<summary.BriefReport();
         std::cout<<std::endl;
-        //直接匹配全局地图。
-        FastCorrelativeScanMatcher(initial_ceres_pose,filtered_point_cloud);
+        if(summary.final_cost>0.35f)
+        {
+            std::cout<<"定位失效，开始全局检测";
+            geometry_msgs::PoseStamped poseStamped;
+            //此时认定定位失效，全局检测、
+            //直接匹配全局地图。
+            geometry_msgs::Pose pose_mm =
+            FastCorrelativeScanMatcher(initial_ceres_pose,filtered_point_cloud);
+            poseStamped.pose = pose_mm;
+            poseStamped.header = msg ->header;
+            pose_pub_.publish(poseStamped);
+        }
+
     }
 
 
@@ -529,7 +549,6 @@ int main(int argc, char** argv) {
     cartographer::mapping::scan_matching::LoopClosuerCheck loop;
 
     ros::spin();
-
 
     return 0;
 }
