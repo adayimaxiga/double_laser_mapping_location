@@ -13,6 +13,7 @@ Panels:
         - /MarkerArray2
         - /Submaps1
         - /PointCloud1
+        - /PoseArray1
       Splitter Ratio: 0.6029411554336548
     Tree Height: 726
   - Class: rviz/Selection
@@ -265,6 +266,22 @@ Visualization Manager:
       Unreliable: false
       Use Fixed Frame: true
       Use rainbow: true
+      Value: true
+    - Alpha: 1
+      Arrow Length: 0.30000001192092896
+      Axes Length: 0.30000001192092896
+      Axes Radius: 0.009999999776482582
+      Class: rviz/PoseArray
+      Color: 255; 25; 0
+      Enabled: true
+      Head Length: 0.07000000029802322
+      Head Radius: 0.029999999329447746
+      Name: PoseArray
+      Shaft Length: 0.23000000417232513
+      Shaft Radius: 0.009999999776482582
+      Shape: Arrow (Flat)
+      Topic: /particlecloud
+      Unreliable: false
       Value: true
   Enabled: true
   Global Options:
